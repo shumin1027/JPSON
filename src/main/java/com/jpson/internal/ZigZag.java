@@ -5,11 +5,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * 小而巧的数字压缩算法
  */
 public final class ZigZag {
 
-    public static int writeVarint(OutputStream stream, int value) throws IOException {
+    public static int writeVarint(OutputStream stream, long value) throws IOException {
         int size = 0;
         while (value >= 0x80) {
             stream.write((byte) ((value & 0x7f) | 0x80));
@@ -20,7 +19,7 @@ public final class ZigZag {
         return size;
     }
 
-    public static int writeVarint(OutputStream stream, long value) throws IOException {
+    public static int writeVarLong(OutputStream stream, long value) throws IOException {
         int size = 0;
         while (value >= 0x80) {
             stream.write((byte) ((value & 0x7f) | 0x80));
@@ -51,25 +50,25 @@ public final class ZigZag {
         do {
             b = (byte) stream.read();
             if (count < 10)
-                value |= ((b & 0x7f) << (7 * count));
+                value |= ((long) (b & 0x7f) << (7L * count));
             ++count;
-        } while ((b & 0x80) == 0);
+        } while ((b & 0x80) != 0);
         return value;
     }
 
-    public static final int encode(int value) {
-        return (((value |= 0) << 1) ^ (value >> 31));
+    public static final long encode(int value) {
+        return ((((long) value) << 1) ^ (value >> 31));
     }
 
     public static final long encode(long value) {
         return (((value |= 0) << 1) ^ (value >> 63));
     }
 
-    public static int decode(int value) {
-        return ((value >> 1) ^ -(value & 1));
+    public static int decodeInt(long value) {
+        return (int) ((value >> 1) ^ -(value & 1));
     }
 
-    public static long decode(long value) {
+    public static long decodeLong(long value) {
         return (long) ((value >> 1) ^ (long) -(long) (value & 1));
     }
 

@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,10 +70,11 @@ class PsonDecoder {
     }
 
     private Object decodeValue() throws Exception {
-        int token = (byte) input.read();
-        if (token <= Token.MAX)
-            return token;
-        switch (token) {
+        int tokenInt = input.read() & 0xFF;
+        if (tokenInt <= Token.MAX_INT)
+            return ZigZag.decodeInt(tokenInt);
+        byte tokenByte = (byte) tokenInt;
+        switch (tokenByte) {
             case Token.NULL:
                 return null;
             case Token.TRUE:
@@ -90,9 +92,9 @@ class PsonDecoder {
             case Token.ARRAY:
                 return decodeArray();
             case Token.INTEGER:
-                return ZigZag.decode(ZigZag.readVarint32(input));
+                return ZigZag.decodeInt(ZigZag.readVarint64(input));
             case Token.LONG:
-                return ZigZag.decode(ZigZag.readVarint64(input));
+                return ZigZag.decodeLong(ZigZag.readVarint64(input));
             case Token.FLOAT:
                 if (input.read(convertArray, 0, 4) != 4)
                     throw new PsonException("stream ended prematurely");
@@ -109,14 +111,14 @@ class PsonDecoder {
                 return BitConverter.toDouble(convertArray, 0);
             case Token.STRING_ADD:
             case Token.STRING:
-                return decodeString((byte) token, false);
+                return decodeString((byte) tokenByte, false);
             case Token.STRING_GET:
                 return getString(ZigZag.readVarint32(input));
             case Token.BINARY:
                 return decodeBinary();
             default:
-//                throw new PsonException("illegal token: 0x" + token.ToString("x2")); // should never happen
-                return null;
+                throw new PsonException("illegal token: 0x" + Integer.toHexString(tokenInt)); // should never happen
+//                return null;
         }
     }
 
@@ -134,7 +136,7 @@ class PsonDecoder {
         int count = ZigZag.readVarint32(input);
         if (allocationLimit > -1 && count > allocationLimit)
             throw new PsonException("allocation limit exceeded:" + count);
-        Map obj = new HashMap();
+        Map obj = new LinkedHashMap();
         while (count-- > 0) {
             byte strToken = (byte) input.read();
             switch (strToken) {
@@ -142,11 +144,9 @@ class PsonDecoder {
                 case Token.STRING:
                     obj.put(decodeString((byte) strToken, true), decodeValue());
                     break;
-
                 case Token.STRING_GET:
                     obj.put(getString(ZigZag.readVarint32(input)), decodeValue());
                     break;
-
                 default:
                     throw new PsonException("string token expected");
             }

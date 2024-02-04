@@ -11,8 +11,9 @@ public final class Token {
     //                              0x02;  // 1
     // zig-zag encoded varints
     public static final byte MAX = (byte) 0xef; // -120, max. zig-zag encoded varint
+    public static final int MAX_INT = 0xef; // -120, max. zig-zag encoded varint
 
-    // Special objectss
+    // Special objects
     public static final byte NULL = (byte) 0xf0; // null
     public static final byte TRUE = (byte) 0xf1; // true
     public static final byte FALSE = (byte) 0xf2; // false

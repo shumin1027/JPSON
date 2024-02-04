@@ -1,10 +1,17 @@
 package com.jpson;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.jpson.internal.*;
+import link.locutus.discord.config.Settings;
+import link.locutus.discord.web.jooby.AwsManager;
+import link.locutus.discord.web.jooby.JteUtil;
 
 /**
  * A low-level PSON writer.
@@ -26,35 +33,34 @@ class PsonWriter {
 
     protected void writeNull() throws IOException {
         output.write(Token.NULL);
-
     }
 
     protected void writeInt(int num) throws IOException {
-        int value = ZigZag.encode(num);
-        if (value <= Token.MAX) {
+        long value = ZigZag.encode(num);
+        if (value <= Token.MAX_INT) {
             output.write((byte) value);
-        } else {
+        } else if (value <= (2L << 32) - 1) {
             output.write(Token.INTEGER);
             ZigZag.writeVarint(output, value);
+        } else {
+            output.write(Token.LONG);
+            ZigZag.writeVarLong(output, value);
         }
-
-
     }
 
     protected void writeLong(long num) throws IOException {
         long value = ZigZag.encode(num);
-        if (value <= Token.MAX) {
+        if (value <= Token.MAX_INT) {
             output.write((byte) value);
         } else {
-            output.write(Token.INTEGER);
-            ZigZag.writeVarint(output, value);
+            output.write(Token.LONG);
+            ZigZag.writeVarLong(output, value);
         }
     }
 
     protected void writeFloat(float flt) throws IOException {
         byte[] bytes = BitConverter.toBytes(flt);
         /**
-         * 如果是大端，对数组做一下反转
          */
         if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
             ArrayUtils.reverse(bytes);
@@ -66,7 +72,6 @@ class PsonWriter {
     protected void writeDouble(double dbl) throws IOException {
         byte[] bytes = BitConverter.toBytes(dbl);
         /**
-         * 如果是大端，对数组做一下反转
          */
         if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
             ArrayUtils.reverse(bytes);
