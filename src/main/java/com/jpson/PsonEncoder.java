@@ -14,7 +14,7 @@ import java.util.Map;
 /**
  * A high-level PSON encoder that maintains a dictionary
  */
-class PsonEncoder extends PsonWriter {
+public class PsonEncoder extends PsonWriter {
 
 
     protected PsonOptions options;

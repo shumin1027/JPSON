@@ -6,10 +6,10 @@ public final class ArrayUtils {
         if (array == null) {
             return;
         }
-        int i = startIndexInclusive < 0 ? 0 : startIndexInclusive;//等同与上面第二段代码中的head变量
-        int j = Math.min(array.length, endIndexExclusive) - 1;//等同与上面第二段代码中的tail变量
-        byte tmp;//等同与上面第二段代码中的temp变量
-        while (j > i) {//使用while循环判断首尾的大小关系
+        int i = startIndexInclusive < 0 ? 0 : startIndexInclusive;
+        int j = Math.min(array.length, endIndexExclusive) - 1;
+        byte tmp;
+        while (j > i) {
             tmp = array[j];
             array[j] = array[i];
             array[i] = tmp;
